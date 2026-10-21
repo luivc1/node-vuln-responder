@@ -77,4 +77,4 @@ Sibling project: [php-vuln-responder](https://github.com/luivc1/php-vuln-respond
 
 ## License
 
-[MIT](LICENSE) © 2026 luivc1
+[MIT](LICENSE) © 2026 Innovatask LLC
