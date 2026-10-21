@@ -1,0 +1,11 @@
+{
+  "name": "node-vuln-responder",
+  "owner": { "name": "Innovatask LLC" },
+  "plugins": [
+    {
+      "name": "node-vuln-responder",
+      "source": "./",
+      "description": "Scan, patch, verify and check for compromise after Node.js security releases (October 2026 advisory included)."
+    }
+  ]
+}
