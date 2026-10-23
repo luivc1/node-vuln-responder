@@ -73,7 +73,10 @@ restart) · `FLOATING` (gets the fix only after reinstall/rebuild/redeploy) · `
 - Evidence is copied before anything is removed; secrets are never printed.
 - Only scan systems you own or are authorized to assess.
 
-Sibling project: [php-vuln-responder](https://github.com/luivc1/php-vuln-responder).
+More responders in this set: [php-vuln-responder](https://github.com/luivc1/php-vuln-responder) ·
+[railway-secrets-responder](https://github.com/luivc1/railway-secrets-responder) ·
+[python-cert-responder](https://github.com/luivc1/python-cert-responder) ·
+[python-vuln-responder](https://github.com/luivc1/python-vuln-responder)
 
 ## License
 
