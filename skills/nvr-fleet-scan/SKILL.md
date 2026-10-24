@@ -24,6 +24,9 @@ What it reads and how to act:
 | Dockerfile / compose `node:<tag>` | `22-alpine` FLOATING, `20.x` EOL, exact old tag VULNERABLE | pin `node:<fixed>-<variant>`, rebuild with `--pull` |
 | GitHub Actions `node-version` | matrix with 18/20 (EOL) | drop EOL entries; add `check-latest: true` |
 | Netlify `NODE_VERSION`, Lambda/Terraform `nodejsNN.x` | EOL runtime or MANAGED | migrate runtime; redeploy |
+| Lockfiles (`package-lock`, `pnpm-lock`, `yarn.lock`, `bun.lock`): body-parser | 2.x EXPOSED (Express 5 decodes Brotli bodies), below 2.4.0 / 1.20.9 VULNERABLE (crash, CVE-2026-111181) | `npm update body-parser`; patch Node where it runs |
+| `package.json` express ^5 / body-parser ^2 with no lockfile | EXPOSED, version unknown | add a lockfile; `npm ls body-parser` |
+| Bun: `packageManager: bun@`, `.bun-version`, `oven/bun:` images, CI `bun-version` | below 1.4.4 VULNERABLE, `latest`/`1` FLOATING | pin `1.4.4` or newer, rebuild with `--pull` |
 
 ## 2. Websites (find which sites run Node)
 
@@ -39,7 +42,7 @@ or a repo/platform setting (step 1, nvr-patch platform playbooks). Static export
 
 | Priority | Rule |
 |---|---|
-| P1 | EOL or VULNERABLE in a production, internet-facing app (APIs, SSR sites, auth, payments) |
+| P1 | EOL or VULNERABLE in a production, internet-facing app (APIs, SSR sites, auth, payments), and EXPOSED Express 5 APIs on an unpatched Node |
 | P2 | Other EOL/VULNERABLE, and STALE processes |
 | P3 | FLOATING production images/configs not rebuilt since the release |
 | P4 | CHECK (ranges, distro builds) and HIDDEN sites without a mapped repo/server |

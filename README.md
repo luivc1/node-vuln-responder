@@ -10,6 +10,24 @@ end-of-life and get no fix.
 
 ![Workflow](docs/workflow.svg)
 
+## HTTP2Shell (CVE-2026-111497)
+
+The Brotli bug in this release is now called **HTTP2Shell** (also "Node2Shell"): the same
+flaw in Google's Brotli decoder (1.0.3 to 1.2.0) reaches far beyond the Node binary.
+The scanner covers the Node side of it:
+
+| Where | Detected by | Fix |
+|---|---|---|
+| Node binary | `--local`, `--project` | 26.12.1 / 24.22.1 / 22.23.4 |
+| System Brotli library (Debian/Ubuntu `nodejs` builds, curl) | `--local` | OS update (`libbrotli1`); Debian 12 and 13 fixed, Ubuntu under evaluation |
+| Bun | `--local`, plus `packageManager`, `.bun-version`, `oven/bun` images, CI in `--project` | Bun 1.4.4 |
+| Express 5 apps (body-parser 2.x decodes Brotli request bodies) | lockfiles in `--project` (`EXPOSED`) | Patched Node; body-parser 2.4.0 also fixes a crash (CVE-2026-111181) |
+
+No confirmed attacks yet (not in CISA KEV as of October 24). Until you can patch:
+block `Content-Encoding: br` request bodies at the proxy and use
+`express.json({ inflate: false })`. Python's `Brotli`/`brotlicffi` are covered by
+[python-vuln-responder](https://github.com/luivc1/python-vuln-responder).
+
 ## Why Node needs a different approach
 
 Node servers almost never reveal their version over HTTP, and Node lives in many places
@@ -18,8 +36,8 @@ scanner works mostly from the inside:
 
 | Mode | Looks at |
 |---|---|
-| `--local` | Every Node on the machine (system, NodeSource, nvm, fnm, Volta, asdf, mise, n, Homebrew, cPanel/CloudLinux/Plesk) and running processes still on an old binary |
-| `--project <dir>` | `.nvmrc`, `package.json` engines, Dockerfiles, compose, GitHub Actions, Netlify, Lambda/Terraform runtimes |
+| `--local` | Every Node on the machine (system, NodeSource, nvm, fnm, Volta, asdf, mise, n, Homebrew, cPanel/CloudLinux/Plesk), running processes still on an old binary, Bun, and the system Brotli library |
+| `--project <dir>` | `.nvmrc`, `package.json` engines, Dockerfiles, compose, GitHub Actions, Netlify, Lambda/Terraform runtimes, Bun pins, body-parser in npm/pnpm/yarn/bun lockfiles |
 | `site.com` | Finds which sites run Node (Express, Next.js, Nuxt, Vercel, Netlify) so you know where to look |
 
 ## What's inside
@@ -57,14 +75,15 @@ sudo bash $S/ioc-hunt.sh                                  # was it compromised?
 bash $S/verify.sh                                         # binaries, PM2, containers
 ```
 
-Or ask your agent: *"Are my Node apps affected by the October 2026 Node.js security
-release?"* / *"¿Mis apps de Node están vulnerables?"*
+Or ask your agent: *"Are my Node apps affected by HTTP2Shell?"* /
+*"¿Mis apps de Node están vulnerables a HTTP2Shell?"*
 
 ## Statuses
 
 `PATCHED` · `VULNERABLE` · `EOL` (no fix, upgrade major) · `STALE` (running old binary,
-restart) · `FLOATING` (gets the fix only after reinstall/rebuild/redeploy) · `MANAGED`
-(platform runtime) · `CHECK` · `HIDDEN` · `NO-NODE`
+restart) · `FLOATING` (gets the fix only after reinstall/rebuild/redeploy) · `EXPOSED`
+(decodes Brotli request bodies: safe only on a patched Node) · `MANAGED` (platform
+runtime) · `CHECK` · `HIDDEN` · `NO-NODE`
 
 ## Safety
 

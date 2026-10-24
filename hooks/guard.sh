@@ -20,10 +20,10 @@ if echo "$LC" | grep -qE '(git clone|curl|wget|npm i(nstall)?|npx|pip install)[^
   decide deny "node-vuln-responder: fetching or running exploit/PoC code is not allowed. Verify by version evidence instead."
 fi
 
-if echo "$LC" | grep -qE '(^|[;&|[:space:]])(nvm (install|alias|use|uninstall)|fnm (install|default|use|uninstall)|volta (install|pin|uninstall)|asdf (install|set|global|uninstall)|mise (use|install|uninstall)|nodenv (install|global)|sudo n |n [0-9]|brew (upgrade|install|uninstall|link))'; then
-  decide ask "node-vuln-responder: this installs or switches a Node version. Approve this exact command?"
+if echo "$LC" | grep -qE '(^|[;&|[:space:]])(nvm (install|alias|use|uninstall)|fnm (install|default|use|uninstall)|volta (install|pin|uninstall)|asdf (install|set|global|uninstall)|mise (use|install|uninstall)|nodenv (install|global)|sudo n |n [0-9]|brew (upgrade|install|uninstall|link)|[^[:space:]]*bun upgrade|bun[[:space:]]+(add|update|install)[[:space:]]+(-g|--global))'; then
+  decide ask "node-vuln-responder: this installs or switches a Node or Bun version. Approve this exact command?"
 fi
-NODECTX='node|npm|nodesource|ea-nodejs|alt-nodejs|pm2|next|nuxt|express|docker compose|docker-compose'
+NODECTX='node|npm|nodesource|ea-nodejs|alt-nodejs|pm2|next|nuxt|express|docker compose|docker-compose|brotli|bun'
 if echo "$LC" | grep -qE '(apt(-get)?|dnf|yum|apk|zypper)[[:space:]]+(-[a-z-]+[[:space:]]+)*(install|upgrade|update|remove|purge|erase|downgrade|history[[:space:]]+undo)' && echo "$LC" | grep -qE "$NODECTX"; then
   decide ask "node-vuln-responder: package change affecting Node. Confirm a backup and approve this exact command."
 fi

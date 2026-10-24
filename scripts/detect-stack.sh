@@ -54,6 +54,20 @@ if [ -n "$bins" ]; then
 else
   kv NODE_BIN "none-found"
 fi
+# ---- HTTP2Shell (Brotli) outside the Node binary ------------------------
+if [ -n "$BROTLI_CVE" ]; then
+  while IFS= read -r b; do
+    [ -z "$b" ] && continue
+    v=$("$b" --version </dev/null 2>/dev/null | head -1); classify_bun "${v:-?}"
+    case "$b" in /opt/homebrew/*|/usr/local/Cellar/*|/home/linuxbrew/*) bm=brew;; */.bun/*) bm=installer;; */node_modules/*) bm=npm;; *) bm=manual;; esac
+    kv BUN_BIN "path=$b version=${v:-?} method=$bm status=$STATUS"
+  done <<< "$(discover_bun_bins)"
+  while read -r name pv mgr; do
+    [ -z "$name" ] && continue
+    classify_libbrotli "$name" "$pv" "$mgr"
+    kv LIBBROTLI "package=$name version=$pv manager=$mgr status=$STATUS"
+  done <<< "$(discover_libbrotli)"
+fi
 kv INSTALL_METHODS "$(echo $METHODS | tr ' ' '\n' | sort -u | tr '\n' ' ' | sed 's/ $//')"
 
 # ---- what runs Node apps (these must be restarted after upgrading) ------

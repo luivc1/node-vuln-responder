@@ -14,14 +14,15 @@ authorization on the host. Run with `sudo` for all users' version managers.
    ```bash
    bash "$NVR/scripts/detect-stack.sh" | tee stack-$(hostname).txt
    ```
-   Key lines: `NODE_BIN ... method= status=`, `INSTALL_METHODS`, `PROCESS_MANAGER`,
+   Key lines: `NODE_BIN ... method= status=`, `BUN_BIN`, `LIBBROTLI` (system Brotli library), `INSTALL_METHODS`, `PROCESS_MANAGER`,
    `SYSTEMD_NODE_UNIT`, `DOCKER_NODE_CONTAINER`, `PASSENGER_CONFIG`, `APP_ROOT`.
 2. **Scan binaries and processes**
    ```bash
    bash "$NVR/scripts/scan.sh" --local -o reports/local-$(hostname)
    ```
    STALE rows are processes still running a binary replaced on disk. Distro packages
-   are confirmed PATCHED only if their changelog lists the key CVEs.
+   are confirmed PATCHED only if their changelog lists the key CVEs. HTTP2Shell rows:
+   every Bun binary, and the shared Brotli library with the programs that load it.
 3. **Find what serves traffic.** Version managers often hold several Nodes; the one
    that matters is what each app runs: `pm2 jlist` (`node_version` per app), the
    `ExecStart=` of systemd units, the container image, or the panel's app setting.
@@ -37,5 +38,8 @@ authorization on the host. Run with `sudo` for all users' version managers.
 - **nvm is per user.** Each deploy user may have its own `~/.nvm` with old versions.
 - **Ubuntu/Debian `nodejs` packages** often ship an EOL major (e.g. 18). A backport is
   possible but not guaranteed; NodeSource or a version manager is the usual fix.
+- **Distro `nodejs` uses the system Brotli library.** Debian marks its nodejs package
+  "unfixed" for CVE-2026-111497 because the fix ships in `libbrotli1`. Update both.
+- **Bun is separate.** It has its own Brotli decoder; fixed in 1.4.4.
 - **Bundled Node** inside Electron apps, SEA executables or vendor appliances needs
   the vendor's update; not covered by these scripts.

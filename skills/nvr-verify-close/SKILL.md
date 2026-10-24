@@ -32,6 +32,8 @@ bash "$NVR/scripts/verify.sh" --url https://<site>
 
 - [ ] Every server: verify PASS
 - [ ] Every repo: no EOL/VULNERABLE pins; floating images rebuilt
+- [ ] HTTP2Shell: system Brotli library updated (or bridged with a dated plan), Bun >= 1.4.4,
+      body-parser >= 2.4.0 / 1.20.9, EXPOSED Express 5 apps confirmed on a patched Node
 - [ ] Every platform app: redeployed on a supported line
 - [ ] Internet-facing apps: compromise check done, gaps listed
 - [ ] EOL apps: migrated, or containment recorded with a migration date

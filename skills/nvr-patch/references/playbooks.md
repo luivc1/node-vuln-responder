@@ -28,6 +28,25 @@ Changing a NodeSource major (EOL upgrade): NodeSource's documented setup script 
 the new major (e.g. `setup_24.x`) replaces the repo; read the script before running
 it, then `sudo apt-get install nodejs`.
 
+## HTTP2Shell: Brotli outside the Node binary
+
+| Component | Update | Rollback |
+|---|---|---|
+| Debian/Ubuntu `libbrotli1` | `sudo apt-get update && sudo apt-get install --only-upgrade libbrotli1` (Debian 12: 1.0.9-2+deb12u1, Debian 13: 1.1.0-2+deb13u1) | `apt-get install libbrotli1=<old>` (only if something breaks) |
+| RHEL/Fedora `brotli` | `sudo dnf upgrade brotli` once the vendor ships it | `dnf downgrade brotli` |
+| Alpine `brotli-libs` | `apk upgrade brotli-libs`; in images, rebuild with `--pull` | previous image |
+| Homebrew `brotli` | `brew upgrade brotli` (Homebrew's node links it) | `brew pin`/reinstall old bottle |
+| Bun | `bun upgrade`; `brew upgrade bun`; images `FROM oven/bun:1.4.4` | previous image, or reinstall the old version |
+| Express 5 | `npm update body-parser` (>= 2.4.0), commit the lockfile | revert the lockfile commit |
+
+Restart afterwards: anything that loaded the old shared library keeps it in memory
+until restarted (`sudo needrestart` on Debian/Ubuntu lists those processes).
+
+Bridges while a fix is not available: block requests with `Content-Encoding: br` at
+nginx (`if ($http_content_encoding ~* br) { return 415; }`), the load balancer or WAF;
+`express.json({ inflate: false })`; run URL-fetching workers unprivileged with no
+secrets in their environment and restricted outbound network.
+
 ## Restart what runs Node
 
 | Runner | Command |

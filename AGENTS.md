@@ -9,19 +9,22 @@ does not load Agent Skills natively. Harnesses that do load skills should start 
 Respond to Node.js security releases across servers, repos, containers, CI and
 platforms: scan, audit, patch, verify, check for compromise, communicate. Ships with
 the October 2026 release (10 CVEs, max High, incl. Brotli RCE CVE-2026-111497; fixed
-in 26.12.1 / 24.22.1 / 22.23.4; every other line is end-of-life).
+in 26.12.1 / 24.22.1 / 22.23.4; every other line is end-of-life). The Brotli bug is
+now called **HTTP2Shell**: the scripts also check Bun (< 1.4.4), the system Brotli
+library (distro Node builds, curl) and Express 5 / body-parser request decoding
+(status EXPOSED).
 
 ## Map
 
 | Path | What it is |
 |---|---|
 | `advisories/*.env` | Source of truth: CVEs, fixed versions, codenames, dates. Read first. |
-| `scripts/scan.sh` | `--local` (this machine), `--project <dir>` (repos/configs), URLs (fingerprint). HTML + CSV. |
+| `scripts/scan.sh` | `--local` (Node, Bun, system Brotli), `--project <dir>` (repos/configs/lockfiles), URLs (fingerprint). HTML + CSV. |
 | `scripts/detect-stack.sh` | Install methods, runners (PM2/systemd/Docker/Passenger), app roots. |
 | `scripts/patch-plan.sh` | Prints upgrade + restart commands for this machine. Never runs them. |
 | `scripts/ioc-hunt.sh` | Read-only compromise triage for Node app hosts. |
 | `scripts/verify.sh` | Proves the fix: binaries, STALE processes, PM2 apps, containers. |
-| `standalone/node-sec-check.sh` | Single-file scanner to share without the plugin. |
+| `standalone/node-sec-check.sh` | Single-file scanner to share without the plugin (rebuild: `bash tools/build-standalone.sh`). |
 | `skills/nvr-*/SKILL.md` | Step-by-step procedures per phase. |
 
 Scripts need only bash + coreutils (+ curl for URL checks). Exit codes: 0 clear,

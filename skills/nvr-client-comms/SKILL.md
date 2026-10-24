@@ -22,7 +22,9 @@ compromised, only what was checked.
 1. Client's language (EN or ES; Puerto Rico clients often prefer Spanish, ask if unsure).
 2. Replace every `{{placeholder}}` from real data: `{{RELEASE_DATE}}`,
    `{{FIXED_VERSIONS}}`, `{{CVE_COUNT}}` (10), `{{TOP_CVE}}` (CVE-2026-111497, Brotli
-   decoder RCE) come from the advisory. Unknown value: ask or drop the sentence.
+   decoder RCE, in the press as "HTTP2Shell" or "Node2Shell") come from the advisory.
+   If clients ask about HTTP2Shell, it is the same issue: say whether their app's Node,
+   Bun or server Brotli library was updated. Unknown value: ask or drop the sentence.
 3. Short and calm: what happened, what it means, what we did, what they do (often
    nothing), when they hear next.
 4. No exploit details, internal hostnames, IPs or secrets.

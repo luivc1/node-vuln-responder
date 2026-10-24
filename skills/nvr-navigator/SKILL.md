@@ -1,6 +1,6 @@
 ---
 name: nvr-navigator
-description: Entry point for Node.js security-release response (October 2026 release - 10 CVEs incl. Brotli RCE CVE-2026-111497 - and future Node releases). Use when someone asks if their Node apps, servers, Next.js/Express sites, Docker images or CI are affected, or wants to scan, patch or check for compromise. Triggers - "Node vulnerability", "am I affected", "patch Node", "update Node", "¿estoy vulnerable?", "actualizar Node", "vulnerabilidad de Node". Routes to the right nvr-* skill and enforces the safety rules.
+description: Entry point for Node.js security-release response (October 2026 release - 10 CVEs incl. the Brotli RCE CVE-2026-111497, now called HTTP2Shell or Node2Shell, which also reaches Bun, the system Brotli library and Express 5 request bodies - and future Node releases). Use when someone asks if their Node apps, servers, Next.js/Express sites, Docker images or CI are affected, or wants to scan, patch or check for compromise. Triggers - "Node vulnerability", "HTTP2Shell", "Node2Shell", "Brotli RCE", "am I affected", "patch Node", "update Node", "¿estoy vulnerable?", "actualizar Node", "vulnerabilidad de Node". Routes to the right nvr-* skill and enforces the safety rules.
 ---
 
 # Node.js Vulnerability Responder: Navigator
@@ -29,6 +29,29 @@ Read `advisories/nodejs-2026-10.env` (or the one the user names) and quote
 - **Configs float.** `node:22-alpine`, `lts/*` or `engines: ">=22"` only pick up the fix
   on the next install, rebuild (`--pull`) or redeploy. Status: FLOATING.
 - **Running apps keep the old runtime** until restarted (PM2, systemd, containers).
+
+## 1b. HTTP2Shell (CVE-2026-111497): beyond the Node binary
+
+The Brotli decoder bug fixed in this release was renamed **HTTP2Shell** once it was
+found in other software that uses Google's Brotli C library (1.0.3 to 1.2.0). "HTTP2"
+means HTTP traffic in general, not the HTTP/2 protocol. The scripts cover the Node side:
+
+| Where | Check | Fix |
+|---|---|---|
+| Node binary | `--local`, `--project` (VULNERABLE/EOL) | Fixed release for its line |
+| Distro Node builds (Debian/Ubuntu `nodejs`) | `--local` row "system Brotli library" | These use the **shared libbrotli**: OS update (Debian 12: 1.0.9-2+deb12u1, Debian 13: 1.1.0-2+deb13u1; Ubuntu: under evaluation) |
+| Bun | `--local` binaries; `--project` packageManager, `.bun-version`, `oven/bun` images, `bun-version` in CI | Bun 1.4.4 or newer |
+| Express 5 apps (body-parser 2.x) | `--project` lockfiles (EXPOSED / VULNERABLE) | Decodes Brotli request bodies by default: the inbound path. Patch Node; body-parser 2.4.0 also fixes a separate crash (CVE-2026-111181) |
+| Apps that fetch untrusted URLs (webhooks, link previews, crawlers) | Code review (built-in `fetch()` decodes Brotli responses) | Patch Node; isolate those services |
+
+Exploitation (2026-10-24): no confirmed attacks, not in CISA KEV; lab code execution
+shown on Node 24.22.0; public proof of concept mostly crashes stock builds. Python,
+PHP, Ruby, .NET and curl users: python-vuln-responder covers Python's `Brotli` and
+`brotlicffi`; the others need their vendors' updates.
+
+Bridges until patched (inbound only): block `Content-Encoding: br` request bodies at the
+proxy/WAF, or `express.json({ inflate: false })` (also rejects gzip). Never strip `br`
+from `Accept-Encoding` as a "fix": a malicious server can still send Brotli.
 
 ## 2. Intake (ask only what you cannot infer)
 
@@ -80,11 +103,12 @@ Append to `nvr-log.md` in the working directory:
 
 | Status | Meaning | Next |
 |---|---|---|
-| VULNERABLE | Supported line below its fixed release | nvr-patch |
+| VULNERABLE | Supported line below its fixed release; also Bun < 1.4.4, unpatched system Brotli, body-parser below its fix | nvr-patch |
 | EOL | Line with no fix (20 and older, 21, 23, 25) | Migrate major (nvr-patch EOL plan) |
 | STALE | Process still running a replaced binary | Restart it |
 | FLOATING | Config gets the fix only on reinstall/rebuild/redeploy | Rebuild with --pull, pin >= fixed |
 | MANAGED | Platform runtime the provider patches | Confirm bulletin; redeploy if needed |
 | CHECK | Distro build or range; real version unknown | Confirm on the machine |
+| EXPOSED | App decodes Brotli request bodies (Express 5 / body-parser 2.x) | Safe only on a patched Node; bridge with inflate:false or block br |
 | HIDDEN | Node site, version not exposed | Server or repo check |
 | PATCHED | Fixed release or confirmed backport | nvr-verify-close |

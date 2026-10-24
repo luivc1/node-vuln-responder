@@ -1,7 +1,21 @@
 {
   "name": "node-vuln-responder",
-  "version": "1.0.0",
-  "description": "Scan, patch, verify and check for compromise after Node.js security releases (ships with the October 2026 release: 10 CVEs incl. Brotli RCE CVE-2026-111497). Read-only scripts, approval-gated changes, bilingual EN/ES comms.",
-  "author": { "name": "Innovatask LLC" },
-  "keywords": ["nodejs", "node", "security", "vulnerability", "patching", "incident-response", "docker", "pm2"]
+  "version": "1.1.0",
+  "description": "Scan, patch, verify and check for compromise after Node.js security releases (ships with the October 2026 release: 10 CVEs incl. Brotli RCE CVE-2026-111497). Read-only scripts, approval-gated changes, bilingual EN/ES comms. Covers HTTP2Shell (CVE-2026-111497): Node, Bun, system Brotli library and Express 5 body parsing.",
+  "author": {
+    "name": "Innovatask LLC"
+  },
+  "keywords": [
+    "nodejs",
+    "node",
+    "security",
+    "vulnerability",
+    "patching",
+    "incident-response",
+    "docker",
+    "pm2",
+    "http2shell",
+    "brotli",
+    "bun"
+  ]
 }

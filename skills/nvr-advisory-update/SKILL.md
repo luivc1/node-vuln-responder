@@ -28,6 +28,7 @@ read in this session.
 | `RECOMMENDED_UPGRADE_MAJOR` | the LTS line with the longest support left |
 | `IOC_SINCE` | earliest known exploitation/disclosure date; otherwise release date minus 14 days |
 | `MITIGATION_NOTE` | only what Node.js states |
+| `BROTLI_*`, `BUN_FIXED`, `BODYPARSER_*` | HTTP2Shell extras for this release only: set them to `""` in an advisory that is not about Brotli, or the extra checks keep running |
 | `SOURCES`, `LAST_VERIFIED` | URLs used; today's date |
 
 2. Validate:

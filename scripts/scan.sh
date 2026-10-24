@@ -2,7 +2,9 @@
 # =====================================================================
 #  scan.sh  (node-vuln-responder)
 #  Node.js exposure scanner for the October 2026 security releases
-#  (10 CVEs, max severity High, incl. CVE-2026-111497 Brotli RCE)
+#  (10 CVEs, max severity High, incl. CVE-2026-111497 Brotli RCE, now
+#  called HTTP2Shell: also checks Bun, the system Brotli library and
+#  Express 5 / body-parser request decoding)
 #
 #  Needs only: bash + coreutils (+ curl for --url checks)
 #  Read-only:  reads versions and config files. No exploit payloads.
@@ -13,10 +15,12 @@
 #
 #  Usage:
 #    scan.sh --local                    # this machine: every Node
-#                                                 # install + running processes
+#                                                 # install + running processes,
+#                                                 # Bun, system Brotli library
 #    scan.sh --project ~/code           # repos: .nvmrc, package.json
 #                                                 # engines, Dockerfiles, CI,
-#                                                 # Lambda/App Engine runtimes
+#                                                 # Lambda/App Engine runtimes,
+#                                                 # Bun pins, body-parser in lockfiles
 #    scan.sh example.com app.example.com   # outside-in fingerprint
 #    scan.sh --local --project . -o report # combine; -> report.html/.csv
 #    scan.sh --advisory next.env ...    # reuse for a future release
@@ -34,6 +38,8 @@
 #                reinstall/redeploy/rebuild (docker build --pull)
 #    MANAGED     platform runtime (AWS Lambda, App Engine...): provider patches
 #    CHECK       distro build or range: confirm the real installed version
+#    EXPOSED     app decodes Brotli request bodies (Express 5 / body-parser 2.x):
+#                safe only on a patched Node; inflate:false or block br until then
 #    HIDDEN      site looks Node-based but hides its version
 #    NO-NODE     nothing Node-related found
 #    ERROR       target did not respond / unreadable

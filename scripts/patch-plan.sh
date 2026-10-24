@@ -42,8 +42,10 @@ say "Host: $(get HOSTNAME)   OS: $(get OS)   Panel: $(get PANEL)   Repo: $(get N
 say "Install methods: $(get INSTALL_METHODS)   Node processes running: $(get NODE_PROCESSES)"
 
 ACTION=$(echo "$STACK" | grep '^NODE_BIN=' | grep -E 'status=(VULNERABLE|EOL|CHECK)')
-if [ -z "$ACTION" ]; then
-  printf '\n%sNo Node install on this machine needs patching.%s Still run verify.sh (restarts, pm2, containers) and check repos with scan.sh --project.\n\n' "$G" "$N"
+BUNA=$(echo "$STACK" | grep '^BUN_BIN=' | grep -E 'status=(VULNERABLE|CHECK)')
+LIBA=$(echo "$STACK" | grep '^LIBBROTLI=' | grep -E 'status=(VULNERABLE|CHECK)')
+if [ -z "$ACTION$BUNA$LIBA" ]; then
+  printf '\n%sNo Node, Bun or system Brotli install on this machine needs patching.%s Still run verify.sh (restarts, pm2, containers) and check repos with scan.sh --project.\n\n' "$G" "$N"
   exit 0
 fi
 
@@ -53,7 +55,7 @@ say "- Same-major patch upgrades (e.g. 22.23.3 -> 22.23.4) are drop-in; restarts
 say "- EOL upgrades change the major version: test on staging first (native addons need npm rebuild)."
 say "- Agents: get explicit human approval before every command below."
 
-while IFS= read -r line; do
+[ -n "$ACTION" ] && while IFS= read -r line; do
   path=$(field "$line" path); ver=$(field "$line" version); m=$(field "$line" method); st=$(field "$line" status)
   maj=${ver%%.*}; FX=$(fixed_for_major "$maj")
   if [ -z "$FX" ]; then T=$RUFX; TM=$RUM; kind="EOL: move to Node $RUM (no fix exists for $maj)"; else T=$FX; TM=$maj; kind="patch to $FX"; fi
@@ -103,6 +105,38 @@ while IFS= read -r line; do
     *)     say "Manual/tarball install. Download $T from https://nodejs.org/dist/v$T/ and verify it against SHASUMS256.txt (GPG-signed) before replacing $path.";;
   esac
 done <<< "$ACTION"
+
+if [ -n "$LIBA" ]; then
+  step "System Brotli library  ->  HTTP2Shell fix ($BROTLI_CVE)"
+  say "Distro Node builds, curl and other tools decode Brotli with this shared library; the Node binary update does not replace it."
+  while IFS= read -r line; do
+    pk=$(field "$line" package); pv=$(field "$line" version); mg=$(field "$line" manager)
+    say "$pk $pv ($mg)"
+    case "$mg" in
+      dpkg) cmd "sudo apt-get update && apt-cache policy $pk"
+            cmd "sudo apt-get install --only-upgrade $pk";;
+      rpm)  cmd "sudo dnf upgrade $pk    # yum on older systems";;
+      apk)  cmd "sudo apk upgrade $pk";;
+      brew) cmd "brew update && brew upgrade brotli";;
+    esac
+  done <<< "$LIBA"
+  say "No fixed build offered yet (Ubuntu: under evaluation; Debian forky/sid: unfixed)? Until it ships: block Content-Encoding: br request bodies at the proxy/WAF and isolate services that fetch untrusted URLs."
+  say "Then restart the services that load it (distro nodejs apps, long-running workers): see RESTART below."
+fi
+
+if [ -n "$BUNA" ]; then
+  step "Bun  ->  $BUN_FIXED or newer (HTTP2Shell, $BROTLI_CVE)"
+  while IFS= read -r line; do
+    path=$(field "$line" path); ver=$(field "$line" version); m=$(field "$line" method)
+    say "Bun $ver at $path (via $m)"
+    case "$m" in
+      brew) cmd "brew upgrade bun    # or: brew upgrade oven-sh/bun/bun";;
+      npm)  cmd "npm install -g bun@latest";;
+      *)    cmd "$path upgrade";;
+    esac
+  done <<< "$BUNA"
+  say "Docker images FROM oven/bun: pin oven/bun:$BUN_FIXED (or newer) and rebuild with --pull. Restart Bun apps (pm2/systemd) afterwards."
+fi
 
 step "RESTART everything that runs Node (or it keeps the old, vulnerable runtime)"
 if echo "$STACK" | grep -q '^PROCESS_MANAGER=pm2'; then

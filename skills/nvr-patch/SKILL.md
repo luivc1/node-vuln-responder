@@ -41,13 +41,24 @@ Order: install the fixed Node -> switch the default -> restart every app that ru
 Node -> verify. **Installing is not enough: running apps keep the old runtime until
 restarted** (PM2 needs `pm2 update`).
 
-## 4. FLOATING configs
+## 4. HTTP2Shell extras (patch-plan prints these too)
+
+- **System Brotli library** (distro Node, curl, others): OS update for `libbrotli1` /
+  `brotli` / `brotli-libs`, then restart services that load it. No fixed build yet
+  (Ubuntu under evaluation)? Bridge: block `Content-Encoding: br` request bodies at the
+  proxy/WAF; isolate services that fetch untrusted URLs.
+- **Bun**: `bun upgrade` (or `brew upgrade bun`), pin `oven/bun:1.4.4`+ and rebuild.
+- **Express 5 apps**: `npm update body-parser` (2.4.0 fixes CVE-2026-111181); until Node
+  is patched, `express.json({ inflate: false })` (rejects gzip bodies too, so check
+  clients first) or the proxy rule above. Express 4 already rejects Brotli bodies.
+
+## 5. FLOATING configs
 
 `node:22-alpine`, `lts/*`, `engines >=22` pick up the fix only on the next build or
 install. Prefer pinning the fixed release (`node:22.23.4-alpine`, `.nvmrc 22.23.4`),
 then rebuild with `--pull` and redeploy. Commit the pin so the fix is reviewable.
 
-## 5. Hand off
+## 6. Hand off
 
 Finish with **nvr-verify-close**: no VULNERABLE/EOL/STALE, PM2 apps and containers on
 fixed versions, repos re-scanned.

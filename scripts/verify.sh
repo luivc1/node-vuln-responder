@@ -27,12 +27,13 @@ load_advisory "$ADV"
 FAIL=0; WARN=0
 line() { # label version status note
   local col; case "$3" in PATCHED) col=$G;; VULNERABLE|EOL|STALE) col=$R; FAIL=1;; *) col=$Y; WARN=1;; esac
-  printf '  %s%-10s%s %s  (Node %s)  %s%s%s\n' "$col$BD" "$3" "$N" "$1" "${2:--}" "$D" "$4" "$N"
+  local lbl="Node ${2:--}"; case "$2" in Bun*) lbl=$2;; esac
+  printf '  %s%-10s%s %s  (%s)  %s%s%s\n' "$col$BD" "$3" "$N" "$1" "$lbl" "$D" "$4" "$N"
 }
 
 printf '\n%sNode.js VERIFY%s  %s(%s)%s\n' "$BD$C" "$N" "$D" "$ADVISORY_NAME" "$N"
 
-printf '\n%s1. Node binaries and running processes on this machine%s\n' "$BD" "$N"
+printf '\n%s1. Node and Bun binaries, system Brotli library, running processes on this machine%s\n' "$BD" "$N"
 bash "$HERE/scan.sh" --local ${ADV:+--advisory "$ADV"} -o "$TMP/local" | sed -n '/^[A-Z-]\{3,\} /,/^Summary/p' | grep -v '^Summary' | sed 's/^/  /'
 rc=${PIPESTATUS[0]}
 [ "$rc" -ge 2 ] && FAIL=1; [ "$rc" -eq 1 ] && WARN=1
@@ -57,6 +58,12 @@ if command -v docker >/dev/null 2>&1 && docker ps >/dev/null 2>&1; then
   found=0
   while read -r cname img; do
     v=$(docker exec "$cname" node -v 2>/dev/null | head -1); v=${v#v}
+    if [ -z "$v" ] && [ -n "$BUN_FIXED" ]; then
+      v=$(docker exec "$cname" bun --version 2>/dev/null | head -1)
+      [ -z "$v" ] && continue
+      found=1; classify_bun "$v"; line "container:$cname ($img)" "Bun $v" "$STATUS" "$( [ "$STATUS" = PATCHED ] || echo 'rebuild with --pull and redeploy')"
+      continue
+    fi
     [ -z "$v" ] && continue
     found=1; classify_ver "$v"; line "container:$cname ($img)" "$v" "$STATUS" "$( [ "$STATUS" = PATCHED ] || echo 'rebuild with --pull and redeploy')"
   done < <(docker ps --format '{{.Names}} {{.Image}}' 2>/dev/null)
@@ -78,5 +85,5 @@ if [ "$FAIL" -eq 1 ]; then
 elif [ "$WARN" -eq 1 ]; then
   printf '%sCONFIRM%s  Nothing confirmed vulnerable, but some items need a manual check (distro builds, floating configs, hidden versions).\n\n' "$Y$BD" "$N"; exit 1
 else
-  printf '%sPASS%s  No vulnerable Node binaries, apps or containers found.\n\n' "$G$BD" "$N"; exit 0
+  printf '%sPASS%s  No vulnerable Node or Bun binaries, system Brotli library, apps or containers found.\n\n' "$G$BD" "$N"; exit 0
 fi
